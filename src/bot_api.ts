@@ -118,9 +118,10 @@ export class CompendiumApiClient {
       throw new Error(obj.error);
     }
     return {
+      type: obj.type,
       user: obj.user,
       guild: { ...obj.guild, url: `https://cdn.discordapp.com/avatars/582882137842122773/c41d183fba78b9f49bb590a1fc8e33a9.png` },
-      token: obj.token,
+      token: obj.token
     };
   }
 
@@ -146,6 +147,7 @@ export class CompendiumApiClient {
       throw new Error(obj.error);
     }
     return {
+      type: obj.type,
       user: obj.user,
       guild: { ...obj.guild, url: `https://cdn.discordapp.com/avatars/582882137842122773/c41d183fba78b9f49bb590a1fc8e33a9.png` },
       token: obj.token,
