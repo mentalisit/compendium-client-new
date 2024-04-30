@@ -25,7 +25,7 @@ export class Compendium extends EventEmitter {
   private syncData: SyncData | null = null;
   private timer: any = null;
 
-  constructor(url: string = "https://mentalisit.sytes.net:8443/compendium") {
+  constructor(url: string = "https://compendium.mentalisit.myds.me/compendium") {
     super();
     this.client = new CompendiumApiClient(url);
   }
