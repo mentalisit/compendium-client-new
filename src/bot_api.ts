@@ -20,7 +20,7 @@ export type Identity = {
   guild: Guild;
   token: string;
   type: string;
-  twins: string[];
+  alts: string[];
 };
 
 export type CorpMember = {
@@ -193,15 +193,15 @@ export class CompendiumApiClient {
   When app is initialized and there is existing data, sync should be called in sync mode with the persisted
   data to get the most recent synchronized data.
   */
-  public async sync(token: string, mode: string, currentTech: TechLevels = {},twin?:string): Promise<SyncData> {
+  public async sync(token: string, mode: string, currentTech: TechLevels = {},alt?:string): Promise<SyncData> {
     if (!["get", "set", "sync"].includes(mode)) {
       throw new Error(`Invalid sync mode ${mode}`);
     }
     if (mode === "get") {
       currentTech = {};
     }
-    if (twin !== undefined && twin !== null && twin !=="") {
-      mode=mode+"?twin="+twin;
+    if (alt !== undefined && alt !== null && alt !=="") {
+      mode=mode+"?twin="+alt;
     }
     const rv = await fetch(`${this.url}/cmd/syncTech/${mode}`, {
       method: "POST",
