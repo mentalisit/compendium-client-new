@@ -38,10 +38,9 @@ export class Compendium extends EventEmitter {
   public getGuild(): Guild | undefined {
     return this.ident?.guild;
   }
-  public getTechLevels(alt?:string): TechLevels | undefined {
+  public getTechLevels(): TechLevels | undefined {
+    let alt = localStorage.getItem('currentAlt')|| '';
    if (alt!==undefined && alt !==null && alt!==""){
-     //TODO нужно вернуть твина
-     console.log("TODO нужно вернуть твина, тест")
      if (this.alts && this.alts[alt] && this.alts[alt].techLevels){
        return this.alts[alt].techLevels
      }
@@ -106,13 +105,14 @@ export class Compendium extends EventEmitter {
     return this.client.corpdata(this.ident?.token, roleId);
   }
 
-  public async setTechLevel(techId: number, level: number,alt?:string): Promise<void> {
+  public async setTechLevel(techId: number, level: number): Promise<void> {
     if (!this.ident) {
       throw new Error("not connected");
     }
     if (getTechFromIndex(techId) === "") {
       throw new Error("Invalid tech id");
     }
+    let alt = localStorage.getItem('currentAlt')|| '';
     if (alt!==undefined && alt!==null && alt!==""){
       if (!this.alts[alt]){
         this.alts[alt] = { ver: 1, inSync: 1, techLevels: {} };
@@ -180,13 +180,14 @@ export class Compendium extends EventEmitter {
     this.alts = {};
   }
 
-  private async syncUserData(mode: string,atl?: string) {
+  private async syncUserData(mode: string) {
     if (!this.ident || (mode !== "get" && !this.syncData)) {
       throw new Error("Cannot sync user data - not connected");
     }
     this.syncData = await this.client.sync(this.ident.token, mode, this.syncData?.techLevels ?? {});
-    if (atl!==undefined && atl!==null && atl!=="") {
-      this.alts[atl]=await this.client.sync(this.ident.token,mode,this.alts[atl].techLevels ?? {}, atl);
+    let alt = localStorage.getItem('currentAlt')|| '';
+    if (alt!==undefined && alt!==null && alt!=="") {
+      this.alts[alt]=await this.client.sync(this.ident.token,mode,this.alts[alt].techLevels ?? {}, alt);
     }
     this.lastRefresh = Date.now();
     this.writeStorage();
