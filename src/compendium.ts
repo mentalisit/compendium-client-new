@@ -15,6 +15,7 @@ type StorageData = {
   userData: SyncData;
   refresh: number;
   tokenRefresh: number;
+  alts: Record<string,SyncData>
 };
 
 export class Compendium extends EventEmitter {
@@ -24,6 +25,7 @@ export class Compendium extends EventEmitter {
   private lastTokenRefresh: number = 0;
   private syncData: SyncData | null = null;
   private timer: any = null;
+  private alts: Record<string, SyncData> | undefined;
 
   constructor(url: string = "https://compendium.mentalisit.myds.me/compendium") {
     super();
@@ -36,7 +38,14 @@ export class Compendium extends EventEmitter {
   public getGuild(): Guild | undefined {
     return this.ident?.guild;
   }
-  public getTechLevels(): TechLevels | undefined {
+  public getTechLevels(alt?:string): TechLevels | undefined {
+   if (alt!==undefined && alt !==null && alt!==""){
+     //TODO нужно вернуть твина
+     console.log("TODO нужно вернуть твина, тест")
+     if (this.alts && this.alts[alt] && this.alts[alt].techLevels){
+       return this.alts[alt].techLevels
+     }
+   }
     return this.syncData?.techLevels;
   }
 
@@ -97,12 +106,20 @@ export class Compendium extends EventEmitter {
     return this.client.corpdata(this.ident?.token, roleId);
   }
 
-  public async setTechLevel(techId: number, level: number): Promise<void> {
+  public async setTechLevel(techId: number, level: number,alt?:string): Promise<void> {
     if (!this.ident) {
       throw new Error("not connected");
     }
     if (getTechFromIndex(techId) === "") {
       throw new Error("Invalid tech id");
+    }
+    if (alt!==undefined && alt!==null && alt!==""){
+      if (!this.alts[alt]){
+        this.alts[alt] = { ver: 1, inSync: 1, techLevels: {} };
+      }
+      this.alts[alt].techLevels[techId] = {level, ts:Date.now()}
+      await this.syncUserData("sync",alt);
+      return;
     }
 
     if (!this.syncData) {
@@ -119,6 +136,7 @@ export class Compendium extends EventEmitter {
     const data: StorageData = {
       ident: this.ident,
       userData: this.syncData ?? { ver: 1, inSync: 1, techLevels: {} },
+      alts: this.alts ?? {},
       refresh: this.lastRefresh,
       tokenRefresh: this.lastTokenRefresh,
     };
@@ -137,6 +155,7 @@ export class Compendium extends EventEmitter {
         if (stored && stored.ident) {
           this.ident = stored.ident;
           this.syncData = stored.syncData ?? { ver: 1, inSync: 1, techLevels: {} };
+          this.alts = stored.alts ?? {};
           this.lastRefresh = Number(stored.refresh ?? 0);
           this.lastTokenRefresh = Number(stored.lastTokenRefresh ?? 0);
           return this.ident;
@@ -158,13 +177,17 @@ export class Compendium extends EventEmitter {
     this.lastTokenRefresh = 0;
     this.lastRefresh = 0;
     this.syncData = null;
+    this.alts = {};
   }
 
-  private async syncUserData(mode: string) {
+  private async syncUserData(mode: string,atl?: string) {
     if (!this.ident || (mode !== "get" && !this.syncData)) {
       throw new Error("Cannot sync user data - not connected");
     }
     this.syncData = await this.client.sync(this.ident.token, mode, this.syncData?.techLevels ?? {});
+    if (atl!==undefined && atl!==null && atl!=="") {
+      this.alts[atl]=await this.client.sync(this.ident.token,mode,this.alts[atl].techLevels ?? {}, atl);
+    }
     this.lastRefresh = Date.now();
     this.writeStorage();
     this.emit("sync", this.syncData.techLevels);

@@ -13,6 +13,7 @@ export type User = {
   discriminator: string; // No longer used
   avatar: string; // avatar id
   avatarUrl: string; // avatar image url for user
+  alts: string[];
 };
 
 export type Identity = {
@@ -20,7 +21,6 @@ export type Identity = {
   guild: Guild;
   token: string;
   type: string;
-  alts: string[];
 };
 
 export type CorpMember = {
