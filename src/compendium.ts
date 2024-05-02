@@ -1,6 +1,6 @@
 import EventEmitter from "events";
-import { CompendiumApiClient, CorpData, Guild, Identity, SyncData, TechLevels, User } from "./bot_api";
-import { getTechFromIndex } from "./module_types";
+import {CompendiumApiClient, CorpData, Guild, Identity, SyncData, TechLevels, User} from "./bot_api";
+import {getTechFromIndex} from "./module_types";
 
 /*
 This class encapsulates the bot api functionality with persistence in
@@ -12,10 +12,9 @@ const STORAGE_KEY = "hscompendium";
 
 type StorageData = {
   ident: Identity;
-  userData: SyncData;
+  userData: Record<string,SyncData>;
   refresh: number;
   tokenRefresh: number;
-  alts: Record<string,SyncData>
 };
 
 export class Compendium extends EventEmitter {
@@ -23,9 +22,8 @@ export class Compendium extends EventEmitter {
   private ident: Identity | null = null;
   private lastRefresh: number = 0;
   private lastTokenRefresh: number = 0;
-  private syncData: SyncData | null = null;
+  private syncData: Record<string, SyncData> | null = null;
   private timer: any = null;
-  private alts: Record<string, SyncData> | undefined;
 
   constructor(url: string = "https://compendium.mentalisit.myds.me/compendium") {
     super();
@@ -39,31 +37,36 @@ export class Compendium extends EventEmitter {
     return this.ident?.guild;
   }
   public getTechLevels(): TechLevels | undefined {
-    let alt = localStorage.getItem('currentAlt')|| '';
-   if (alt!==undefined && alt !==null && alt!==""){
-     if (this.alts && this.alts[alt] && this.alts[alt].techLevels){
-       return this.alts[alt].techLevels
-     }
-   }
-    return this.syncData?.techLevels;
+    const alt = localStorage.getItem('currentAlt') || 'default';
+
+    if (this.syncData && this.syncData[alt]) {
+      return this.syncData[alt].techLevels;
+    }
+    return undefined;
   }
 
-  /*
-  Initialize the local data. If we have a valid connection, refresh the data
-  */
   public async initialize() {
-    this.ident = null;
-    const ident = this.readStorage();
-    if (ident) {
-      if (!this.syncData || Object.entries(this.syncData.techLevels).length === 0) {
-        await this.syncUserData("get");
-      } else {
-        await this.syncUserData("sync");
+    this.ident = this.readStorage();  // Получаем ident напрямую из хранилища
+    if (this.ident) {
+      const alt = localStorage.getItem('currentAlt') || 'default';
+
+      if (!this.syncData) {
+        this.syncData = {};
       }
+      if (!this.syncData[alt]) {
+        this.syncData[alt] = { ver: 1, inSync: 1, techLevels: {} };
+      }
+
+      const hasData = Object.keys(this.syncData[alt].techLevels).length > 0;
+
+      await this.syncUserData(hasData ? "sync" : "get");
+
       this.emit("connected", this.ident);
     }
+    // Настройка таймера для регулярной проверки
     this.timer = setInterval(() => this.tick(), REFRESH_MS);
   }
+
 
   public shutdown() {
     if (this.timer) {
@@ -112,22 +115,21 @@ export class Compendium extends EventEmitter {
     if (getTechFromIndex(techId) === "") {
       throw new Error("Invalid tech id");
     }
-    let alt = localStorage.getItem('currentAlt')|| '';
-    if (alt!==undefined && alt!==null && alt!==""){
-      if (!this.alts[alt]){
-        this.alts[alt] = { ver: 1, inSync: 1, techLevels: {} };
-      }
-      this.alts[alt].techLevels[techId] = {level, ts:Date.now()}
-      await this.syncUserData("sync",alt);
-      return;
-    }
+    const alt = localStorage.getItem('currentAlt') || 'default';
 
     if (!this.syncData) {
-      this.syncData = { ver: 1, inSync: 1, techLevels: {} };
+      this.syncData = {};
     }
-    this.syncData.techLevels[techId] = { level, ts: Date.now() };
+
+    if (!this.syncData[alt]) {
+      this.syncData[alt] = { ver: 1, inSync: 1, techLevels: {} };
+    }
+
+    this.syncData[alt].techLevels[techId] = { level, ts: Date.now() };
+
     await this.syncUserData("sync");
   }
+
 
   private writeStorage() {
     if (!this.ident) {
@@ -135,8 +137,7 @@ export class Compendium extends EventEmitter {
     }
     const data: StorageData = {
       ident: this.ident,
-      userData: this.syncData ?? { ver: 1, inSync: 1, techLevels: {} },
-      alts: this.alts ?? {},
+      userData: this.syncData ?? {'default':{ ver: 1, inSync: 1, techLevels: {} }},
       refresh: this.lastRefresh,
       tokenRefresh: this.lastTokenRefresh,
     };
@@ -154,8 +155,7 @@ export class Compendium extends EventEmitter {
         const stored = JSON.parse(raw);
         if (stored && stored.ident) {
           this.ident = stored.ident;
-          this.syncData = stored.syncData ?? { ver: 1, inSync: 1, techLevels: {} };
-          this.alts = stored.alts ?? {};
+          this.syncData = stored.syncData ?? {'default':{ ver: 1, inSync: 1, techLevels: {}} };
           this.lastRefresh = Number(stored.refresh ?? 0);
           this.lastTokenRefresh = Number(stored.lastTokenRefresh ?? 0);
           return this.ident;
@@ -177,22 +177,37 @@ export class Compendium extends EventEmitter {
     this.lastTokenRefresh = 0;
     this.lastRefresh = 0;
     this.syncData = null;
-    this.alts = {};
   }
 
-  private async syncUserData(mode: string) {
-    if (!this.ident || (mode !== "get" && !this.syncData)) {
+  private async syncUserData(mode: string): Promise<void> {
+    const alt = localStorage.getItem('currentAlt') || 'default';
+
+    if (!this.ident) {
       throw new Error("Cannot sync user data - not connected");
     }
-    this.syncData = await this.client.sync(this.ident.token, mode, this.syncData?.techLevels ?? {});
-    let alt = localStorage.getItem('currentAlt')|| '';
-    if (alt!==undefined && alt!==null && alt!=="") {
-      this.alts[alt]=await this.client.sync(this.ident.token,mode,this.alts[alt].techLevels ?? {}, alt);
+    if (!this.syncData) {
+      this.syncData = {};
     }
-    this.lastRefresh = Date.now();
-    this.writeStorage();
-    this.emit("sync", this.syncData.techLevels);
+    if (!this.syncData[alt]) {
+      this.syncData[alt] = { ver: 1, inSync: 1, techLevels: {} };
+    }
+
+    try {
+      // Выполнение синхронизации с сервером
+      this.syncData[alt] = await this.client.sync(this.ident.token, mode, this.syncData[alt].techLevels ?? {});
+
+      // Обновление времени последней синхронизации и запись в локальное хранилище
+      this.lastRefresh = Date.now();
+      this.writeStorage();
+
+      // Отправка события синхронизации
+      this.emit("sync", this.syncData[alt].techLevels);
+    } catch (error) {
+      console.error("Error syncing data:", error);
+      throw new Error("Failed to sync data: " + error);
+    }
   }
+
 
   private async tick() {
     if (this.ident) {
