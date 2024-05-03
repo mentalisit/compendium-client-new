@@ -211,9 +211,21 @@ export class Compendium extends EventEmitter {
 
   private async tick() {
     if (this.ident) {
-      if (Date.now() - this.lastTokenRefresh > 7776000000) {
-        // three months - this is unlikely to occur in a browser environment
-        // but may occur in a hybrid mobile app
+      // if (Date.now() - this.lastTokenRefresh > 7776000000) {
+      //   // three months - this is unlikely to occur in a browser environment
+      //   // but may occur in a hybrid mobile app
+      //   try {
+      //     this.ident = await this.client.refreshConnection(this.ident.token);
+      //     this.lastTokenRefresh = Date.now();
+      //     this.writeStorage();
+      //   } catch (e) {
+      //     this.clearData();
+      //     this.emit("connectfailed", (e as Error).message);
+      //     throw e;
+      //   }
+      // }
+      if (Date.now() - this.lastRefresh > REFRESH_MS) {
+        await this.syncUserData("sync");
         try {
           this.ident = await this.client.refreshConnection(this.ident.token);
           this.lastTokenRefresh = Date.now();
@@ -223,9 +235,6 @@ export class Compendium extends EventEmitter {
           this.emit("connectfailed", (e as Error).message);
           throw e;
         }
-      }
-      if (Date.now() - this.lastRefresh > REFRESH_MS) {
-        await this.syncUserData("sync");
       }
     }
   }
