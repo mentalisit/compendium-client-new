@@ -60,6 +60,11 @@ export class Compendium extends EventEmitter {
       const hasData = Object.keys(this.syncData[alt].techLevels).length > 0;
 
       await this.syncUserData(hasData ? "sync" : "get");
+      if (!hasData) {
+        this.ident = await this.client.refreshConnection(this.ident.token);
+        this.lastTokenRefresh = Date.now();
+        this.writeStorage();
+      }
 
       this.emit("connected", this.ident);
     }
@@ -226,15 +231,6 @@ export class Compendium extends EventEmitter {
       // }
       if (Date.now() - this.lastRefresh > REFRESH_MS) {
         await this.syncUserData("sync");
-        try {
-          this.ident = await this.client.refreshConnection(this.ident.token);
-          this.lastTokenRefresh = Date.now();
-          this.writeStorage();
-        } catch (e) {
-          this.clearData();
-          this.emit("connectfailed", (e as Error).message);
-          throw e;
-        }
       }
     }
   }
