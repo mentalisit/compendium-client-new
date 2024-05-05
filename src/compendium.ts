@@ -8,7 +8,7 @@ local storage and provides a simpler interface for front ends.
 */
 const REFRESH_MS = 5 * 60 * 1000;
 
-const STORAGE_KEY = "hscompendium";
+const STORAGE_KEY = "hscompendium2";
 
 type StorageData = {
   ident: Identity;
@@ -25,7 +25,7 @@ export class Compendium extends EventEmitter {
   private syncData: Record<string, SyncData> | null = null;
   private timer: any = null;
 
-  constructor(url: string = "https://compendium.mentalisit.myds.me/compendium") {
+  constructor(url: string = "https://compendiumnew.mentalisit.myds.me/compendium") {
     super();
     this.client = new CompendiumApiClient(url);
   }

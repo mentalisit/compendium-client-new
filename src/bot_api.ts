@@ -20,7 +20,6 @@ export type Identity = {
   user: User;
   guild: Guild;
   token: string;
-  type: string;
 };
 
 export type CorpMember = {
@@ -66,7 +65,7 @@ export type SyncData = {
 };
 
 export class CompendiumApiClient {
-  constructor(private url: string = "https://compendium.mentalisit.myds.me/compendium") {}
+  constructor(private url: string = "https://compendiumnew.mentalisit.myds.me/compendium") {}
 
   /*
     Given a code from the bot %connect command (which has the format /[A-Za-z0-9]{4}-[A-Za-z0-9]{4}-[A-Za-z0-9]{4}/)
@@ -118,12 +117,7 @@ export class CompendiumApiClient {
     if (rv.status >= 400) {
       throw new Error(obj.error);
     }
-    return {
-      type: obj.type,
-      user: obj.user,
-      guild: { ...obj.guild, url: `https://cdn.discordapp.com/avatars/582882137842122773/c41d183fba78b9f49bb590a1fc8e33a9.png` },
-      token: obj.token
-    };
+    return obj;
   }
 
   /*
@@ -147,12 +141,7 @@ export class CompendiumApiClient {
     if (rv.status >= 400) {
       throw new Error(obj.error);
     }
-    return {
-      type: obj.type,
-      user: obj.user,
-      guild: { ...obj.guild, url: `https://cdn.discordapp.com/avatars/582882137842122773/c41d183fba78b9f49bb590a1fc8e33a9.png` },
-      token: obj.token,
-    };
+    return obj;
   }
 
   /*
