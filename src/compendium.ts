@@ -8,7 +8,7 @@ local storage and provides a simpler interface for front ends.
 */
 const REFRESH_MS = 5 * 60 * 1000;
 
-const STORAGE_KEY = "hscompendium2";
+const STORAGE_KEY = "hscompendium";
 
 type StorageData = {
   ident: Identity;
