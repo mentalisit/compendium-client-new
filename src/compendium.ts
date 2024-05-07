@@ -59,14 +59,19 @@ export class Compendium extends EventEmitter {
 
       const hasData = Object.keys(this.syncData[alt].techLevels).length > 0;
 
-      await this.syncUserData(hasData ? "sync" : "get");
-      if (!hasData) {
-        this.ident = await this.client.refreshConnection(this.ident.token);
-        this.lastTokenRefresh = Date.now();
-        this.writeStorage();
+      try {
+        await this.syncUserData(hasData ? "sync" : "get");
+        if (!hasData) {
+          this.ident = await this.client.refreshConnection(this.ident.token);
+          this.lastTokenRefresh = Date.now();
+          this.writeStorage();
+        }
+
+        this.emit("connected", this.ident);
+      }catch (err) {
+        this.clearData()
       }
 
-      this.emit("connected", this.ident);
     }
     // Настройка таймера для регулярной проверки
     this.timer = setInterval(() => this.tick(), REFRESH_MS);
