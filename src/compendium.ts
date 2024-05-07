@@ -37,7 +37,7 @@ export class Compendium extends EventEmitter {
     return this.ident?.guild;
   }
   public getTechLevels(): TechLevels | undefined {
-    const alt = localStorage.getItem('currentAlt') || 'default';
+    const alt = localStorage.getItem('selectUserAlts') || 'default';
 
     if (this.syncData && this.syncData[alt]) {
       return this.syncData[alt].techLevels;
@@ -48,7 +48,7 @@ export class Compendium extends EventEmitter {
   public async initialize() {
     this.ident = this.readStorage();  // Получаем ident напрямую из хранилища
     if (this.ident) {
-      const alt = localStorage.getItem('currentAlt') || 'default';
+      const alt = localStorage.getItem('selectUserAlts') || 'default';
 
       if (!this.syncData) {
         this.syncData = {};
@@ -125,7 +125,7 @@ export class Compendium extends EventEmitter {
     if (getTechFromIndex(techId) === "") {
       throw new Error("Invalid tech id");
     }
-    const alt = localStorage.getItem('currentAlt') || 'default';
+    const alt = localStorage.getItem('selectUserAlts') || 'default';
 
     if (!this.syncData) {
       this.syncData = {};
@@ -190,7 +190,7 @@ export class Compendium extends EventEmitter {
   }
 
   private async syncUserData(mode: string): Promise<void> {
-    const alt = localStorage.getItem('currentAlt') || 'default';
+    const alt = localStorage.getItem('selectUserAlts') || 'default';
 
     if (!this.ident) {
       throw new Error("Cannot sync user data - not connected");
