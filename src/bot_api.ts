@@ -182,15 +182,15 @@ export class CompendiumApiClient {
   When app is initialized and there is existing data, sync should be called in sync mode with the persisted
   data to get the most recent synchronized data.
   */
-  public async sync(token: string, mode: string, currentTech: TechLevels = {}): Promise<SyncData> {
+  public async sync(alt: string, token: string, mode: string, currentTech: TechLevels = {}): Promise<SyncData> {
     if (!["get", "set", "sync"].includes(mode)) {
       throw new Error(`Invalid sync mode ${mode}`);
     }
     if (mode === "get") {
       currentTech = {};
     }
-    let alt = localStorage.getItem('selectUserAlts')|| 'default';
-    if (alt !== undefined && alt !== null && alt !=="") {
+    //let alt = localStorage.getItem('selectUserAlts')|| 'default';
+    if (alt !== undefined && alt !== null && alt !=="" && alt !== 'default') {
       mode=mode+"?twin="+alt;
     }
     const rv = await fetch(`${this.url}/cmd/syncTech/${mode}`, {
