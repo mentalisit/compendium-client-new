@@ -37,10 +37,11 @@ export class Compendium extends EventEmitter {
     return this.ident?.guild;
   }
   public getTechLevels(): TechLevels | undefined {
-    const alt   = localStorage.getItem('selectUserAlts') || this.ident?.user?.username?;
-
-    if (this.syncData && this.syncData[alt]) {
-      return this.syncData[alt].techLevels;
+    if (this.ident){
+      const alt   = this.GetNameAlt();
+      if (this.syncData && this.syncData[alt]) {
+        return this.syncData[alt].techLevels;
+      }
     }
     return undefined;
   }
@@ -48,7 +49,7 @@ export class Compendium extends EventEmitter {
   public async initialize() {
     this.ident = this.readStorage();  // Получаем ident напрямую из хранилища
     if (this.ident) {
-      const alt = localStorage.getItem('selectUserAlts') || this.ident?.user?.username?;
+      const alt = this.GetNameAlt();
 
       if (!this.syncData) {
         this.syncData = {};
@@ -125,7 +126,7 @@ export class Compendium extends EventEmitter {
     if (getTechFromIndex(techId) === "") {
       throw new Error("Invalid tech id");
     }
-    const alt = localStorage.getItem('selectUserAlts') || this.ident?.user?.username?;
+    const alt = this.GetNameAlt();
 
     if (!this.syncData) {
       this.syncData = {};
@@ -190,10 +191,7 @@ export class Compendium extends EventEmitter {
   }
 
   private async syncUserData(mode: string): Promise<void> {
-    let alt = localStorage.getItem('selectUserAlts') || this.ident?.user?.username?;
-    if (alt === this.ident?.user.username){
-      alt = '';
-    }
+    let alt = this.GetNameAlt()
 
     if (!this.ident) {
       throw new Error("Cannot sync user data - not connected");
@@ -219,6 +217,17 @@ export class Compendium extends EventEmitter {
       console.error("Error syncing data:", error);
       throw new Error("Failed to sync data: " + error);
     }
+  }
+  private GetNameAlt(): string {
+      if (this.ident){
+        let alt = localStorage.getItem('selectUserAlts') || 'default';
+        if (this.ident.user.username === alt) {
+          return 'default';
+        }else {
+          return alt;
+        }
+      }
+      return '';
   }
 
 

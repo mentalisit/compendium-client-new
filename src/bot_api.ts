@@ -189,7 +189,6 @@ export class CompendiumApiClient {
     if (mode === "get") {
       currentTech = {};
     }
-    //let alt = localStorage.getItem('selectUserAlts')|| 'default';
     if (alt !== undefined && alt !== null && alt !=="" && alt !== 'default') {
       mode=mode+"?twin="+alt;
     }
