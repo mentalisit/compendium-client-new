@@ -233,7 +233,7 @@ export class Compendium extends EventEmitter {
 
     public switchAlt(alt: string) {
         this.selectedAlt = alt;
-        this.syncUserData('sync');
+        this.syncUserData('get');
     }
 
 
