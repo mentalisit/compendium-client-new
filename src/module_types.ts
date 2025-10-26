@@ -74,6 +74,7 @@ export const ModuleMap: Record<string, number> = {
   ChainRayDrone: 905,
   DeltaDrones: 906,
   DroneSquad: 907,
+  CerberusDrone: 908, //new module, not yet compatible with the main compendium 
 };
 /*
 const types: Record<string, number> = {
