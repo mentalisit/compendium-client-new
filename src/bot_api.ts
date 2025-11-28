@@ -58,6 +58,16 @@ export type TechLevel = {
 // Tech levels are indexed on the numeric ids found in module_types
 export type TechLevels = Record<number, TechLevel>;
 
+export type Corporation = {
+  id: string;
+  name: string;
+};
+
+export type UserCorporations = {
+  user: User;
+  corporations: Corporation[];
+};
+
 export type SyncData = {
   ver: number; // for now, 1
   inSync: number; // for now 1,
@@ -199,6 +209,27 @@ export class CompendiumApiClient {
         Authorization: token,
       },
       body: JSON.stringify({ ver: 1, techLevels: currentTech }),
+    });
+    if (rv.status < 200 || rv.status >= 500) {
+      throw new Error("Server Error");
+    }
+    const obj = await rv.json();
+    if (rv.status >= 400) {
+      throw new Error(obj.error);
+    }
+    return obj;
+  }
+
+  /*
+  Get user corporations. Returns user information and list of corporations the user belongs to.
+  This endpoint requires a valid authorization token.
+  */
+  public async getUserCorporations(token: string): Promise<UserCorporations> {
+    const rv = await fetch(`${this.url}/user/corporations`, {
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: token,
+      },
     });
     if (rv.status < 200 || rv.status >= 500) {
       throw new Error("Server Error");

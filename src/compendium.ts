@@ -1,5 +1,5 @@
 import EventEmitter from 'events';
-import { CompendiumApiClient, CorpData, Guild, Identity, SyncData, TechLevels, User } from './bot_api';
+import { CompendiumApiClient, CorpData, Guild, Identity, SyncData, TechLevels, User, UserCorporations } from './bot_api';
 import { getTechFromIndex } from './module_types';
 
 /*
@@ -121,6 +121,14 @@ export class Compendium extends EventEmitter {
         }
 
         return this.client.corpdata(this.ident?.token, roleId);
+    }
+
+    public async getUserCorporations(): Promise<UserCorporations> {
+        if (!this.ident) {
+            throw new Error('not connected');
+        }
+
+        return this.client.getUserCorporations(this.ident.token);
     }
 
     public async setTechLevel(techId: number, level: number): Promise<void> {
