@@ -120,12 +120,14 @@ export class Compendium extends EventEmitter {
             throw new Error('not connected');
         }
 
-        let queryParams = '';
+        const queryParts: string[] = [];
         if (params?.corpId !== undefined && params.corpId !== null) {
-            queryParams = `?corpId=${params.corpId}`;
-        } else if (params?.roleId !== undefined && params.roleId !== null) {
-            queryParams = `?roleId=${params.roleId}`;
+            queryParts.push(`corpId=${params.corpId}`);
         }
+        if (params?.roleId !== undefined && params.roleId !== null) {
+            queryParts.push(`roleId=${params.roleId}`);
+        }
+        const queryParams = queryParts.length > 0 ? `?${queryParts.join('&')}` : '';
 
         const rv = await fetch(`${this.client.getUrl()}/cmd/corpdata${queryParams}`, {
             headers: {

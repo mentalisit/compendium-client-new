@@ -166,12 +166,14 @@ export class CompendiumApiClient {
   This can be a module, or afk, local time, rs level, etc
   */
   public async corpdata(token: string, params?: { corpId?: string | null, roleId?: string | null }): Promise<CorpData> {
-    let queryParams = '';
+    const queryParts: string[] = [];
     if (params?.corpId !== undefined && params.corpId !== null) {
-      queryParams = `?corpId=${params.corpId}`;
-    } else if (params?.roleId !== undefined && params.roleId !== null) {
-      queryParams = `?roleId=${params.roleId}`;
+      queryParts.push(`corpId=${params.corpId}`);
     }
+    if (params?.roleId !== undefined && params.roleId !== null) {
+      queryParts.push(`roleId=${params.roleId}`);
+    }
+    const queryParams = queryParts.length > 0 ? `?${queryParts.join('&')}` : '';
 
     const rv = await fetch(`${this.url}/cmd/corpdata${queryParams}`, {
       headers: {
