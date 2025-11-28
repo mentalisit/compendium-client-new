@@ -115,12 +115,32 @@ export class Compendium extends EventEmitter {
         this.clearData();
     }
 
-    public async corpdata(roleId?: string | null | undefined): Promise<CorpData> {
+    public async corpdata(params?: { corpId?: string | null, roleId?: string | null }): Promise<CorpData> {
         if (!this.ident) {
             throw new Error('not connected');
         }
 
-        return this.client.corpdata(this.ident?.token, roleId);
+        let queryParams = '';
+        if (params?.corpId !== undefined && params.corpId !== null) {
+            queryParams = `?corpId=${params.corpId}`;
+        } else if (params?.roleId !== undefined && params.roleId !== null) {
+            queryParams = `?roleId=${params.roleId}`;
+        }
+
+        const rv = await fetch(`${this.client.getUrl()}/cmd/corpdata${queryParams}`, {
+            headers: {
+                "Content-Type": "application/json",
+                Authorization: this.ident.token,
+            },
+        });
+        if (rv.status < 200 || rv.status >= 500) {
+            throw new Error("Server Error");
+        }
+        const obj = await rv.json();
+        if (rv.status >= 400) {
+            throw new Error(obj.error);
+        }
+        return obj;
     }
 
     public async getUserCorporations(): Promise<UserCorporations> {
@@ -128,7 +148,20 @@ export class Compendium extends EventEmitter {
             throw new Error('not connected');
         }
 
-        return this.client.getUserCorporations(this.ident.token);
+        const rv = await fetch(`${this.client.getUrl()}/user/corporations`, {
+            headers: {
+                "Content-Type": "application/json",
+                Authorization: this.ident.token,
+            },
+        });
+        if (rv.status < 200 || rv.status >= 500) {
+            throw new Error("Server Error");
+        }
+        const obj = await rv.json();
+        if (rv.status >= 400) {
+            throw new Error(obj.error);
+        }
+        return obj;
     }
 
     public async setTechLevel(techId: number, level: number): Promise<void> {

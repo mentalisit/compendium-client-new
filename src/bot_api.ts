@@ -77,6 +77,10 @@ export type SyncData = {
 export class CompendiumApiClient {
   constructor(private url: string = "https://compendiumnew.mentalisit.myds.me/compendium") {}
 
+  public getUrl(): string {
+    return this.url;
+  }
+
   /*
     Given a code from the bot %connect command (which has the format /[A-Za-z0-9]{4}-[A-Za-z0-9]{4}-[A-Za-z0-9]{4}/)
     This validates the code and returns a token and identity. The app should confim the identity with the user
@@ -155,14 +159,21 @@ export class CompendiumApiClient {
   }
 
   /*
-  Returns various data for all member sin the corp, optionally filtered by a role.
-  This can be cached for short periods of time as long as the role doesn't change to reduce round trips,
+  Returns various data for all member sin the corp, optionally filtered by corporation id or role id.
+  This can be cached for short periods of time as long as the filter doesn't change to reduce round trips,
   since it returns all of teh data each call.
   UI Should present a way to select which data element to display for each user, and then do so.
   This can be a module, or afk, local time, rs level, etc
   */
-  public async corpdata(token: string, roleId?: string | null | undefined): Promise<CorpData> {
-    const rv = await fetch(`${this.url}/cmd/corpdata?roleId=${roleId}`, {
+  public async corpdata(token: string, params?: { corpId?: string | null, roleId?: string | null }): Promise<CorpData> {
+    let queryParams = '';
+    if (params?.corpId !== undefined && params.corpId !== null) {
+      queryParams = `?corpId=${params.corpId}`;
+    } else if (params?.roleId !== undefined && params.roleId !== null) {
+      queryParams = `?roleId=${params.roleId}`;
+    }
+
+    const rv = await fetch(`${this.url}/cmd/corpdata${queryParams}`, {
       headers: {
         "Content-Type": "application/json",
         Authorization: token,
