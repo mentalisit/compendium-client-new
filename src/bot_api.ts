@@ -4,14 +4,15 @@ export type Guild = {
   url: string; // guild image url
   id: string; // guild id
   name: string; // guild name
-  icon: string; // guild icon id
+  //icon: string; // guild icon id
 };
 
 export type User = {
   id: string; // User id
   username: string;
-  discriminator: string; // No longer used
-  avatar: string; // avatar id
+  nickname: string;
+  //discriminator: string; // No longer used
+  //avatar: string; // avatar id
   avatarUrl: string; // avatar image url for user
   alts: string[];
 };
@@ -29,7 +30,7 @@ export type CorpMember = {
   avatar: string | null;
   // Tech is keyed on ids in module_types.
   // Each is an array - a[0] = level, a[1] = ws score
-  tech: Record<number, Array<number>>;
+  tech: TechLevels;
   avatarUrl: string | null;
   timeZone: string | null;
   localTime: string | null;
