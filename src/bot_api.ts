@@ -75,11 +75,80 @@ export type SyncData = {
   techLevels: TechLevels;
 };
 
+export type ServerConfig = {
+  url: string;
+  priority: number;
+};
+
+export type ServersResponse = {
+  servers: ServerConfig[];
+};
+
 export class CompendiumApiClient {
-  constructor(private url: string = "https://compendiumnew.mentalisit.myds.me/compendium") {}
+  private activeUrl: string = "";
+  private servers: ServerConfig[] = [];
+
+  constructor(
+    private configUrl: string =
+      "https://raw.githubusercontent.com/mentalisit/bot_kz/refs/heads/master/servers.json"
+  ) {
+    this.initialize();
+  }
+
+  private async initialize(): Promise<void> {
+    try {
+      await this.loadServers();
+      await this.selectHealthyServer();
+    } catch (error) {
+      console.error('Failed to initialize CompendiumApiClient:', error);
+      throw error;
+    }
+  }
+
+  private async loadServers(): Promise<void> {
+    try {
+      const response = await fetch(this.configUrl);
+      if (!response.ok) {
+        throw new Error(`Failed to fetch servers config: ${response.status}`);
+      }
+      const data: ServersResponse = await response.json();
+      this.servers = data.servers.sort((a, b) => a.priority - b.priority);
+    } catch (error) {
+      throw new Error(`Failed to load servers: ${error}`);
+    }
+  }
+
+  private async checkServerHealth(serverUrl: string): Promise<boolean> {
+    try {
+      const response = await fetch(`${serverUrl}/compendium/health`, {
+        method: 'GET',
+        cache: 'no-cache',
+        signal: AbortSignal.timeout(5000) // 5 second timeout
+      });
+      return response.ok;
+    } catch (error) {
+      return false;
+    }
+  }
+
+  private async selectHealthyServer(): Promise<void> {
+    if (this.servers.length === 0) {
+      throw new Error('No servers available');
+    }
+
+    for (const server of this.servers) {
+      const isHealthy = await this.checkServerHealth(server.url);
+      if (isHealthy) {
+        this.activeUrl = `${server.url}/compendium`;
+        return;
+      }
+    }
+
+    throw new Error('No healthy servers available');
+  }
 
   public getUrl(): string {
-    return this.url;
+    return this.activeUrl;
   }
 
   /*
@@ -89,7 +158,7 @@ export class CompendiumApiClient {
     The token returned here is only used for the connect endpoint, which returns a new token.
    */
   public async checkIdentity(code: string): Promise<Identity> {
-    const rv = await fetch(`${this.url}/applink/identities`, {
+    const rv = await fetch(`${this.activeUrl}/applink/identities`, {
       cache: "no-cache",
       headers: {
         Authorization: code,
@@ -116,7 +185,7 @@ export class CompendiumApiClient {
   current data.
   */
   public async connect(identity: Identity): Promise<Identity> {
-    const rv = await fetch(`${this.url}/applink/connect`, {
+    const rv = await fetch(`${this.activeUrl}/applink/connect`, {
       method: "POST",
       cache: "no-cache",
       headers: {
@@ -142,7 +211,7 @@ export class CompendiumApiClient {
    connection time and refresh before a year is up.
    */
   public async refreshConnection(token: string): Promise<Identity> {
-    const rv = await fetch(`${this.url}/applink/refresh`, {
+    const rv = await fetch(`${this.activeUrl}/applink/refresh`, {
       cache: "no-cache",
       headers: {
         "Content-Type": "application/json",
@@ -176,7 +245,7 @@ export class CompendiumApiClient {
     }
     const queryParams = queryParts.length > 0 ? `?${queryParts.join('&')}` : '';
 
-    const rv = await fetch(`${this.url}/cmd/corpdata${queryParams}`, {
+    const rv = await fetch(`${this.activeUrl}/cmd/corpdata${queryParams}`, {
       headers: {
         "Content-Type": "application/json",
         Authorization: token,
@@ -216,7 +285,7 @@ export class CompendiumApiClient {
     if (alt !== undefined && alt !== null && alt !=="" && alt !== 'default') {
       mode=mode+"?twin="+alt;
     }
-    const rv = await fetch(`${this.url}/cmd/syncTech/${mode}`, {
+    const rv = await fetch(`${this.activeUrl}/cmd/syncTech/${mode}`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -239,7 +308,7 @@ export class CompendiumApiClient {
   This endpoint requires a valid authorization token.
   */
   public async getUserCorporations(token: string): Promise<UserCorporations> {
-    const rv = await fetch(`${this.url}/user/corporations`, {
+    const rv = await fetch(`${this.activeUrl}/user/corporations`, {
       headers: {
         "Content-Type": "application/json",
         Authorization: token,

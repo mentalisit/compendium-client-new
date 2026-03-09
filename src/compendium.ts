@@ -32,9 +32,9 @@ export class Compendium extends EventEmitter {
 
     public selectedAlt: string = 'default';
 
-    constructor(url: string = 'https://compendiumnew.mentalisit.myds.me/compendium') {
+    constructor(configUrl?: string) {
         super();
-        this.client = new CompendiumApiClient(url);
+        this.client = new CompendiumApiClient(configUrl);
     }
 
     public getUser(): User | undefined {
