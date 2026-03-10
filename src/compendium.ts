@@ -56,6 +56,9 @@ export class Compendium extends EventEmitter {
     }
 
     public async initialize() {
+        // Сначала инициализируем клиент для загрузки серверов
+        await this.client.initialize();
+        
         this.ident = this.readStorage(); // Получаем ident напрямую из хранилища
         if (this.ident) {
             const alt = this.GetNameAlt();

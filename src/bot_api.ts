@@ -87,18 +87,24 @@ export type ServersResponse = {
 export class CompendiumApiClient {
   private activeUrl: string = "";
   private servers: ServerConfig[] = [];
+  private initialized: boolean = false;
 
   constructor(
     private configUrl: string =
       "https://raw.githubusercontent.com/mentalisit/bot_kz/refs/heads/master/servers.json"
   ) {
-    this.initialize();
+    // Не вызываем initialize здесь, а ждем явного вызова
   }
 
-  private async initialize(): Promise<void> {
+  public async initialize(): Promise<void> {
+    if (this.initialized) {
+      return;
+    }
+    
     try {
       await this.loadServers();
       await this.selectHealthyServer();
+      this.initialized = true;
     } catch (error) {
       console.error('Failed to initialize CompendiumApiClient:', error);
       throw error;
@@ -148,6 +154,9 @@ export class CompendiumApiClient {
   }
 
   public getUrl(): string {
+    if (!this.initialized) {
+      throw new Error('CompendiumApiClient not initialized. Call initialize() first.');
+    }
     return this.activeUrl;
   }
 
