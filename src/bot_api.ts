@@ -100,7 +100,7 @@ export class CompendiumApiClient {
     if (this.initialized) {
       return;
     }
-    
+
     try {
       await this.loadServers();
       await this.selectHealthyServer();
@@ -153,11 +153,19 @@ export class CompendiumApiClient {
     throw new Error('No healthy servers available');
   }
 
-  public getUrl(): string {
+  private async ensureInitialized(): Promise<string> {
     if (!this.initialized) {
-      throw new Error('CompendiumApiClient not initialized. Call initialize() first.');
+      console.log('Auto-initializing CompendiumApiClient...');
+      await this.initialize();
+    }
+    if (!this.activeUrl) {
+      throw new Error('No active server URL available. Server initialization may have failed.');
     }
     return this.activeUrl;
+  }
+
+  public async getUrl(): Promise<string> {
+    return this.ensureInitialized();
   }
 
   /*
@@ -167,7 +175,8 @@ export class CompendiumApiClient {
     The token returned here is only used for the connect endpoint, which returns a new token.
    */
   public async checkIdentity(code: string): Promise<Identity> {
-    const rv = await fetch(`${this.activeUrl}/applink/identities`, {
+    const url = await this.ensureInitialized();
+    const rv = await fetch(`${url}/applink/identities`, {
       cache: "no-cache",
       headers: {
         Authorization: code,
@@ -194,7 +203,8 @@ export class CompendiumApiClient {
   current data.
   */
   public async connect(identity: Identity): Promise<Identity> {
-    const rv = await fetch(`${this.activeUrl}/applink/connect`, {
+    const url = await this.ensureInitialized();
+    const rv = await fetch(`${url}/applink/connect`, {
       method: "POST",
       cache: "no-cache",
       headers: {
@@ -220,7 +230,8 @@ export class CompendiumApiClient {
    connection time and refresh before a year is up.
    */
   public async refreshConnection(token: string): Promise<Identity> {
-    const rv = await fetch(`${this.activeUrl}/applink/refresh`, {
+    const url = await this.ensureInitialized();
+    const rv = await fetch(`${url}/applink/refresh`, {
       cache: "no-cache",
       headers: {
         "Content-Type": "application/json",
@@ -245,6 +256,7 @@ export class CompendiumApiClient {
   This can be a module, or afk, local time, rs level, etc
   */
   public async corpdata(token: string, params?: { corpId?: string | null, roleId?: string | null }): Promise<CorpData> {
+    const url = await this.ensureInitialized();
     const queryParts: string[] = [];
     if (params?.corpId !== undefined && params.corpId !== null) {
       queryParts.push(`corpId=${params.corpId}`);
@@ -254,7 +266,7 @@ export class CompendiumApiClient {
     }
     const queryParams = queryParts.length > 0 ? `?${queryParts.join('&')}` : '';
 
-    const rv = await fetch(`${this.activeUrl}/cmd/corpdata${queryParams}`, {
+    const rv = await fetch(`${url}/cmd/corpdata${queryParams}`, {
       headers: {
         "Content-Type": "application/json",
         Authorization: token,
@@ -285,6 +297,7 @@ export class CompendiumApiClient {
   data to get the most recent synchronized data.
   */
   public async sync(alt: string, token: string, mode: string, currentTech: TechLevels = {}): Promise<SyncData> {
+    const url = await this.ensureInitialized();
     if (!["get", "set", "sync"].includes(mode)) {
       throw new Error(`Invalid sync mode ${mode}`);
     }
@@ -294,7 +307,7 @@ export class CompendiumApiClient {
     if (alt !== undefined && alt !== null && alt !=="" && alt !== 'default') {
       mode=mode+"?twin="+alt;
     }
-    const rv = await fetch(`${this.activeUrl}/cmd/syncTech/${mode}`, {
+    const rv = await fetch(`${url}/cmd/syncTech/${mode}`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -317,7 +330,8 @@ export class CompendiumApiClient {
   This endpoint requires a valid authorization token.
   */
   public async getUserCorporations(token: string): Promise<UserCorporations> {
-    const rv = await fetch(`${this.activeUrl}/user/corporations`, {
+    const url = await this.ensureInitialized();
+    const rv = await fetch(`${url}/user/corporations`, {
       headers: {
         "Content-Type": "application/json",
         Authorization: token,
