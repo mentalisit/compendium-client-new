@@ -76,7 +76,7 @@ export type SyncData = {
 };
 
 export class CompendiumApiClient {
-  constructor(private url: string = "https://compendiumnew.mentalisit.myds.me/compendium") {}
+  constructor(private url: string = "https://mentalisit.myds.me/compendium") {}
 
   public getUrl(): string {
     return this.url;
